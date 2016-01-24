@@ -76,8 +76,10 @@ public class Lookup {
 		BufferedReader reader = new BufferedReader(new FileReader(tweetsLookup));
 		String line = null;
 		while ((line = reader.readLine()) != null) {
+			if(line.matches(".*[1-9].*")){
 			dayDatesTweet.add(line);
 			dayPathsTweet.add(path + "/tweets/Day/index." + line);
+			}
 
 		}
 		reader.close();
