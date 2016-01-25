@@ -4,12 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.gistic.taghreed.basicgeom.MBR;
+import org.gistic.taghreed.diskBaseQueryOptimizer.Cluster;
 import org.gistic.taghreed.diskBaseQueryOptimizer.DayCardinality;
 
 public class Bucket implements Comparable<Bucket>{
 	private int id;
     private MBR area;
     private List<DayCardinality> dayCardinality;
+    private List<Cluster> cluster;//to be implemented so a bucket contains clusters, for now the implementation as follow each bucket contains a list of days only. 
     private double persent;
     
 
@@ -55,6 +57,16 @@ public class Bucket implements Comparable<Bucket>{
     public double getPersent() {
 		return persent;
 	}
+    
+    public List<Cluster> getCluster() {
+		return cluster;
+	}
+    
+    public void setCluster(List<Cluster> cluster) {
+		this.cluster = cluster;
+	}
+    
+    
 
     /**
      * Cardinality of the partition is the number of rows in this partition
@@ -89,6 +101,8 @@ public class Bucket implements Comparable<Bucket>{
     		this.dayCardinality.add(day);
     	}
     }
+    
+    
     
     @Override
     public String toString() {

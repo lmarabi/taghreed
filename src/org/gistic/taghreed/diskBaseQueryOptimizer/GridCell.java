@@ -21,7 +21,7 @@ public class GridCell {
 	double average;
 	double deviation;
 	private List<Cluster> cluster;
-	static double threashold = 0.95; //theashold reflect the accuracy of the confidence level 0.0 - 1.0  
+    double threashold = 0.95; //theashold reflect the accuracy of the confidence level 0.0 - 1.0  
 	
 	public GridCell(MBR mbr,Lookup lookup) {
 		this.mbr = mbr;
@@ -191,8 +191,8 @@ public class GridCell {
 		Iterator it = this.daysCardinality.entrySet().iterator();
 		while(it.hasNext()){
 			Map.Entry<String, Long> entry = (Entry<String, Long>) it.next();
-//			if(lookup.isDayFromMissingDay(entry.getKey()))
-//				continue;
+			if(lookup.isDayFromMissingDay(entry.getKey()))
+				continue;
 //			System.out.println(entry.getKey()+"-"+entry.getValue());
 			days.add(new DayCardinality(entry.getKey(), entry.getValue()));
 			
@@ -203,7 +203,7 @@ public class GridCell {
 		return createClusts(days);
 	}
 	
-	private static boolean isClusterExist(List<DayCardinality> array, int from, int to) {
+	private boolean isClusterExist(List<DayCardinality> array, int from, int to) {
 		List<Long> list = new ArrayList<Long>();
 		
 		while (from <= to) {
