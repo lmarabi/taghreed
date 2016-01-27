@@ -14,13 +14,12 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.gistic.taghreed.basicgeom.MBR;
 import org.gistic.taghreed.basicgeom.Point;
 import org.gistic.taghreed.diskBaseQuery.query.Lookup;
-import org.joda.time.Days;
+
 
 /**
  *
@@ -216,6 +215,7 @@ public class Test {
 			String[] temp = line.split("_");
 			whole.daysCardinality.put(temp[0], Long.parseLong(temp[1]));
 		}
+		
 		
 		
 		whole.initCluster(0.90);

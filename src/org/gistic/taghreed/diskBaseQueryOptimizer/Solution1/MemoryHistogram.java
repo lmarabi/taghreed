@@ -670,7 +670,7 @@ public class MemoryHistogram {
 				"55.43924685,-21.2713249", "54.9923851,51.1565279",
 				"116.2924235,-8.3199363", "81.6726242,7.75050505",
 				"76.840953,43.2144594" };
-		for (int ci = 90; ci >=10; ci = ci - 10) {
+		for (int ci = 10; ci >=10; ci = ci - 10) {
 			this.confidenceThreshold = (double) ci / (double) 100;
 			OfflinePhase(level);
 			reset();

@@ -112,6 +112,23 @@ public class MBR {
     }
     
     /**
+     * This method return the width of the MBR 
+     * @return
+     */
+    public double getWidth(){
+    	return this.max.getLon() - this.min.getLon();
+    }
+    
+    
+    /**
+     * This method return the Height of the MBR 
+     * @return
+     */
+    public double getHeight(){
+    	return this.max.getLat() - this.min.getLat();
+    }
+    
+    /**
      * This method convert the MBR object into WKT format as string object. 
      * @return
      */
