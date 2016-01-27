@@ -12,7 +12,7 @@ import edu.umn.cs.spatialHadoop.core.Rectangle;
 public class QuadTree {
 	Rectangle spaceMbr;
 	int nodeCapacity;
-	List<VisoBucket> elements;
+	VisoBucket elements;
 	boolean hasChild;
 	boolean isleaf;
 	QuadTree NW, NE, SE, SW; // four subtrees
@@ -24,7 +24,7 @@ public class QuadTree {
 	public QuadTree(Rectangle mbr, int capacity) {
 		spaceMbr = mbr;
 		this.nodeCapacity = capacity;
-		this.elements = new ArrayList<VisoBucket>();
+		this.elements = null;
 		this.hasChild = false;
 	}
 
@@ -59,14 +59,15 @@ public class QuadTree {
 			 * otherwise split the node and redistribute the nodes between the
 			 * children.
 			 */
-			if (this.elements.size() < this.nodeCapacity) {
-				this.elements.add(p);
+			if (this.elements == null) {
+				this.elements = p;
+				this.nodeCapacity++;
 			} else {
 				// Number of node exceed the capacity split and then reqrrange
 				// the points
 				this.split();
 				reArrangePointsinChildren(this.elements);
-				this.elements.clear();
+				this.elements= null;
 				this.elements = null;
 				this.hasChild = true;
 			}
@@ -89,6 +90,12 @@ public class QuadTree {
 
 	}
 	
+	/**
+	 * This method get the visualize buckets 
+	 * @param queryMBR
+	 * @param values
+	 * @return
+	 */
 	public ArrayList<VisoBucket> get(Rectangle queryMBR, ArrayList<VisoBucket> values) {
 		if (this.hasChild) {
 			if (this.NW.spaceMbr.contains(queryMBR)) {
@@ -105,35 +112,49 @@ public class QuadTree {
 			}
 			return values;
 		}
-		if (this.hasChild == false && this.elements.size() > 0) {
-			values.addAll(this.elements);
+		if (this.hasChild == false && this.elements != null) {
+			values.add(this.elements);
 		}
 		return values;
 	}
+	
+//	public void aggregateStatistics(QuadTree node){
+//		if(!node.hasChild){
+//			if(node.elements.size() >0){
+//				
+//			}
+//		}else{// node has children
+//			List<VisoBucket> temp = new ArrayList<VisoBucket>();
+//			int[] aggregate = new int[365];
+//			for(int i =0; i< 365;i++){
+//				node.SE
+//			}
+//		}
+//	}
 
 	/**
 	 * This method redistribute the points between the 4 new quadrant child
 	 * 
 	 * @param list
 	 */
-	private void reArrangePointsinChildren(List<VisoBucket> list) {
-		for (VisoBucket p : list) {
+	private void reArrangePointsinChildren(VisoBucket bucket) {
+//		for (VisoBucket p : list) {
 			// if(p.isIntersected(this.SW.spaceMbr)){
-			this.SW.elements.add(p);
+			this.SW.elements = bucket;
 			// }else if(p.isIntersected(this.NW.spaceMbr)){
-			this.NW.elements.add(p);
+			this.NW.elements = bucket;
 			// }else if(p.isIntersected(this.NE.spaceMbr)){
-			this.NE.elements.add(p);
+			this.NE.elements = bucket;
 			// }else if(p.isIntersected(this.SE.spaceMbr)){
-			this.SE.elements.add(p);
+			this.SE.elements = bucket;
 			// }
-		}
+//		}
 	}
 
 	private void printLeafNodes(QuadTree node) throws IOException {
 		if (!node.hasChild) {
 			result.add(node.spaceMbr);
-			writer.write(toWKT(node.spaceMbr) + "\t" + node.elements.size()
+			writer.write(toWKT(node.spaceMbr)
 					+ "\n");
 			System.out.println(counter + "\t" + node.spaceMbr.toString());
 		} else {
@@ -190,7 +211,8 @@ public class QuadTree {
 		writer = new OutputStreamWriter(new FileOutputStream(
 				System.getProperty("user.dir") + "/viso_quad.WKT", false),
 				"UTF-8");
-		printAllNodes(this);
+		//printAllNodes(this);
+		printLeafNodes(this);
 		writer.close();
 		Rectangle[] cellinfo = new Rectangle[result.size()];
 		return result.toArray(cellinfo);
@@ -198,7 +220,7 @@ public class QuadTree {
 
 	public static void main(String[] args) throws IOException {
 		QuadTree test = new QuadTree(new Rectangle(-180, -90, 180, 90), 1);
-		test.packInRectangles(10);
+		test.packInRectangles(17);
 
 	}
 
