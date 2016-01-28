@@ -1,30 +1,36 @@
 package org.umn.visualization;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import edu.umn.cs.spatialHadoop.core.Point;
-import edu.umn.cs.spatialHadoop.core.Rectangle;
 
-public class QuadTree {
-	Rectangle spaceMbr;
+import java.io.Serializable;
+
+public class QuadTree implements Serializable {
+	RectangleQ spaceMbr;
 	int nodeCapacity;
-	VisoBucket elements;
+	int level;
+	//VisoBucket elements;
+	List<PointQ> elements;
 	boolean hasChild;
-	boolean isleaf;
 	QuadTree NW, NE, SE, SW; // four subtrees
 	//
-	OutputStreamWriter writer;
-	List<Rectangle> result;
+	//OutputStreamWriter writer;
+	List<RectangleQ> result;
 	int counter = 0;
 
-	public QuadTree(Rectangle mbr, int capacity) {
+	public QuadTree(RectangleQ mbr, int capacity) {
 		spaceMbr = mbr;
+		int level = 0;
 		this.nodeCapacity = capacity;
-		this.elements = null;
+		this.elements = new ArrayList<PointQ>();
 		this.hasChild = false;
 	}
 
@@ -32,25 +38,25 @@ public class QuadTree {
 	private void split() {
 		double subWidth = (this.spaceMbr.getWidth() / 2);
 		double subHeight = (this.spaceMbr.getHeight() / 2);
-		Point midWidth;
-		Point midHeight;
-		midWidth = new Point((this.spaceMbr.x1 + subWidth), this.spaceMbr.y1);
-		midHeight = new Point(this.spaceMbr.x1, (this.spaceMbr.y1 + subHeight));
+		PointQ midWidth;
+		PointQ midHeight;
+		midWidth = new PointQ((this.spaceMbr.x1 + subWidth), this.spaceMbr.y1);
+		midHeight = new PointQ(this.spaceMbr.x1, (this.spaceMbr.y1 + subHeight));
 
-		this.SW = new QuadTree(new Rectangle(this.spaceMbr.x1,
+		this.SW = new QuadTree(new RectangleQ(this.spaceMbr.x1,
 				this.spaceMbr.y1, midWidth.x, midHeight.y), this.nodeCapacity);
-		this.NW = new QuadTree(new Rectangle(midHeight.x, midHeight.y,
+		this.NW = new QuadTree(new RectangleQ(midHeight.x, midHeight.y,
 				midWidth.x, this.spaceMbr.y2), this.nodeCapacity);
-		this.NE = new QuadTree(new Rectangle(midWidth.x, midHeight.y,
+		this.NE = new QuadTree(new RectangleQ(midWidth.x, midHeight.y,
 				this.spaceMbr.x2, this.spaceMbr.y2), this.nodeCapacity);
-		this.SE = new QuadTree(new Rectangle(midWidth.x, midWidth.y,
+		this.SE = new QuadTree(new RectangleQ(midWidth.x, midWidth.y,
 				this.spaceMbr.x2, midHeight.y), this.nodeCapacity);
 	}
 
 	/**
 	 * Insert an object into this tree
 	 */
-	public void insert(VisoBucket p) {
+	public void insert(PointQ p) {
 		// check if there is chiled or not before insert
 		// First case if node doesn't have child
 		if (!this.hasChild) {
@@ -59,16 +65,15 @@ public class QuadTree {
 			 * otherwise split the node and redistribute the nodes between the
 			 * children.
 			 */
-			if (this.elements == null) {
-				this.elements = p;
-				this.nodeCapacity++;
+			if (this.elements.size() <= this.nodeCapacity) {
+				this.elements.add(p);
+				this.hasChild = false;
 			} else {
 				// Number of node exceed the capacity split and then reqrrange
-				// the points
+				// the Points
 				this.split();
 				reArrangePointsinChildren(this.elements);
-				this.elements= null;
-				this.elements = null;
+				this.elements.clear();
 				this.hasChild = true;
 			}
 		}
@@ -77,15 +82,15 @@ public class QuadTree {
 		 * point belong to
 		 */
 		else {
-			// if(p.isIntersected(this.SW.spaceMbr)){
+			 if(p.isIntersected(this.SW.spaceMbr)){
 			this.SW.insert(p);
-			// }else if(p.isIntersected(this.NW.spaceMbr)){
+			 }else if(p.isIntersected(this.NW.spaceMbr)){
 			this.NW.insert(p);
-			// }else if(p.isIntersected(this.NE.spaceMbr)){
+			 }else if(p.isIntersected(this.NE.spaceMbr)){
 			this.NE.insert(p);
-			// }else if(p.isIntersected(this.SE.spaceMbr)){
+			 }else if(p.isIntersected(this.SE.spaceMbr)){
 			this.SE.insert(p);
-			// }
+			 }
 		}
 
 	}
@@ -96,7 +101,7 @@ public class QuadTree {
 	 * @param values
 	 * @return
 	 */
-	public ArrayList<VisoBucket> get(Rectangle queryMBR, ArrayList<VisoBucket> values) {
+	public ArrayList<PointQ> get(RectangleQ queryMBR, ArrayList<PointQ> values) {
 		if (this.hasChild) {
 			if (this.NW.spaceMbr.contains(queryMBR)) {
 				this.NW.get(queryMBR, values);
@@ -112,8 +117,8 @@ public class QuadTree {
 			}
 			return values;
 		}
-		if (this.hasChild == false && this.elements != null) {
-			values.add(this.elements);
+		if (this.hasChild == false && this.elements.size() != 0) {
+			values.addAll(this.elements);
 		}
 		return values;
 	}
@@ -137,45 +142,45 @@ public class QuadTree {
 	 * 
 	 * @param list
 	 */
-	private void reArrangePointsinChildren(VisoBucket bucket) {
-//		for (VisoBucket p : list) {
-			// if(p.isIntersected(this.SW.spaceMbr)){
-			this.SW.elements = bucket;
-			// }else if(p.isIntersected(this.NW.spaceMbr)){
-			this.NW.elements = bucket;
-			// }else if(p.isIntersected(this.NE.spaceMbr)){
-			this.NE.elements = bucket;
-			// }else if(p.isIntersected(this.SE.spaceMbr)){
-			this.SE.elements = bucket;
-			// }
-//		}
+	private void reArrangePointsinChildren(List<PointQ> list) {
+		for(PointQ p : list){
+    		if(p.isIntersected(this.SW.spaceMbr)){
+    			this.SW.elements.add(p);
+    		}else if(p.isIntersected(this.NW.spaceMbr)){
+    			this.NW.elements.add(p);
+    		}else if(p.isIntersected(this.NE.spaceMbr)){
+    			this.NE.elements.add(p);
+    		}else if(p.isIntersected(this.SE.spaceMbr)){
+    			this.SE.elements.add(p);
+    		}
+    	}
 	}
 
-	private void printLeafNodes(QuadTree node) throws IOException {
+	private void printLeafNodes(QuadTree node,OutputStreamWriter writer) throws IOException {
 		if (!node.hasChild) {
 			result.add(node.spaceMbr);
-			writer.write(toWKT(node.spaceMbr)
-					+ "\n");
-			System.out.println(counter + "\t" + node.spaceMbr.toString());
+			writer.write(toWKT(node.spaceMbr)+
+					"\t"+node.level+ "\n");
+//			System.out.println(counter + "\t" + node.spaceMbr.toString());
 		} else {
-			printLeafNodes(node.SW);
-			printLeafNodes(node.NW);
-			printLeafNodes(node.NE);
-			printLeafNodes(node.SE);
+			printLeafNodes(node.SW,writer);
+			printLeafNodes(node.NW,writer);
+			printLeafNodes(node.NE,writer);
+			printLeafNodes(node.SE,writer);
 		}
 	}
 	
-	private void printAllNodes(QuadTree node) throws IOException{
+	private void printAllNodes(QuadTree node, OutputStreamWriter writer) throws IOException{
 		result.add(node.spaceMbr);
 		writer.write(toWKT(node.spaceMbr)+ "\n");
-		System.out.println(counter + "\t" + node.spaceMbr.toString());
-		printLeafNodes(node.SW);
-		printLeafNodes(node.NW);
-		printLeafNodes(node.NE);
-		printLeafNodes(node.SE);
+//		System.out.println(counter + "\t" + node.spaceMbr.toString());
+		printLeafNodes(node.SW,writer);
+		printLeafNodes(node.NW,writer);
+		printLeafNodes(node.NE,writer);
+		printLeafNodes(node.SE,writer);
 	}
 
-	public String toWKT(Rectangle polygon) {
+	public String toWKT(RectangleQ polygon) {
 		return (counter++) + "\tPOLYGON ((" + polygon.x2 + " " + polygon.y1
 				+ ", " + polygon.x2 + " " + polygon.y2 + ", " + polygon.x1
 				+ " " + polygon.y2 + ", " + polygon.x1 + " " + polygon.y1
@@ -187,40 +192,74 @@ public class QuadTree {
 	 * 
 	 * @throws IOException
 	 */
-	public void storeQuadToDisk(QuadTree node) throws IOException {
-		writer = new OutputStreamWriter(new FileOutputStream(
-				System.getProperty("user.dir") + "/viso_quad.dat", false),
-				"UTF-8");
-		printAllNodes(this);
-		writer.close();
+	public boolean storeQuadToDisk(File f) throws IOException {
+		try {
+            FileOutputStream fos = new FileOutputStream(f);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(spaceMbr);
+            oos.writeObject(nodeCapacity);
+            oos.writeObject(level);
+            oos.writeObject(elements);
+            oos.writeObject(hasChild);
+            oos.writeObject(NW);
+            oos.writeObject(NE);
+            oos.writeObject(SE);
+            oos.writeObject(SW);
+            oos.close();
+            fos.close();
+        } catch (IOException ex) {
+            return false;
+        }
+        return true;
 
 	}
 
 	/**
 	 * Restore quad tree to memory
 	 */
-	public void loadQuadToMemory() {
-
+	public boolean loadQuadToMemory(File f) {
+		 try {
+	            FileInputStream fis = new FileInputStream(f);
+	            ObjectInputStream ois = new ObjectInputStream(fis);
+	            this.spaceMbr = (RectangleQ)ois.readObject();
+	            this.nodeCapacity = (int)ois.readObject();
+	            this.level = (int)ois.readObject();
+	            this.elements = (List<PointQ>)ois.readObject();
+	            this.hasChild = (boolean)ois.readObject();
+	            this.NW = (QuadTree)ois.readObject();
+	            this.NE = (QuadTree)ois.readObject();
+	            this.SE = (QuadTree)ois.readObject();
+	            this.SW = (QuadTree)ois.readObject();
+	            ois.close();
+	            fis.close();
+	        } catch (IOException e) {
+	            return false;
+	        } catch (ClassNotFoundException e) {
+	            return false;
+	        }
+	        return true;
 	}
 
-	public Rectangle[] packInRectangles(int LevelNumbers) throws IOException {
-		for (int i = 0; i < LevelNumbers; i++) {
-			this.insert(new VisoBucket());
-		}
-		result = new ArrayList<Rectangle>();
-		writer = new OutputStreamWriter(new FileOutputStream(
+	public void StoreRectanglesWKT() throws IOException {
+//		for (int i = 0; i < LevelNumbers; i++) {
+//			this.insert(1);
+//		}
+		 OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(
 				System.getProperty("user.dir") + "/viso_quad.WKT", false),
 				"UTF-8");
+		result = new ArrayList<RectangleQ>();
 		//printAllNodes(this);
-		printLeafNodes(this);
+		printLeafNodes(this,writer);
 		writer.close();
-		Rectangle[] cellinfo = new Rectangle[result.size()];
-		return result.toArray(cellinfo);
+//		System.out.println("number of buckets in the leaves:"+counter+
+//				"estimated Size = "+((1.47*counter)/1024)+" MB");
 	}
+	
+
 
 	public static void main(String[] args) throws IOException {
-		QuadTree test = new QuadTree(new Rectangle(-180, -90, 180, 90), 1);
-		test.packInRectangles(17);
+		QuadTree test = new QuadTree(new RectangleQ(-180, -90, 180, 90), 1);
+		//test.packInRectangleQs(17);
 
 	}
 
